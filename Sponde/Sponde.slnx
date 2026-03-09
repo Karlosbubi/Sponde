@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/SolutionItems/">
+    <File Path="..\.gitignore" />
+    <File Path="..\README.md" />
+  </Folder>
+  <Project Path="Sponde/Sponde.csproj" />
+</Solution>
