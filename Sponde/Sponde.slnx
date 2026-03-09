@@ -1,7 +1,12 @@
 <Solution>
+  <Folder Name="/Docs/">
+    <File Path="..\Docs\DB_Scheme.puml" />
+  </Folder>
   <Folder Name="/SolutionItems/">
+    <File Path="..\.env\test_data.sqlite" />
     <File Path="..\.gitignore" />
     <File Path="..\README.md" />
+    <File Path="..\Utils\init_db.sql" />
   </Folder>
   <Project Path="Sponde/Sponde.csproj" />
 </Solution>

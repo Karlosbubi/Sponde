@@ -1,0 +1,54 @@
+@startuml
+
+entity "Product" as product {
+    id : int
+    ---
+    displayName : text
+    description : text
+    barcode : int
+}
+
+entity "Category" as category {
+    id : int
+    ---
+    displayName : string
+}
+
+entity "Price" as price {
+    id : int
+    ---
+    price : decimal/currency
+    date : datetime
+    specialOffer : bool
+    unit : text
+}
+
+entity "Purchase" as purchase {
+    id : int
+    ---
+    quantity : decimal
+}
+
+entity "Store" as store {
+    id : int
+    ---
+    displayName : text
+    description : text
+}
+
+entity "Cart" as cart {
+    id: int
+    ---
+    date : datetime
+}
+
+product }|--|| price
+purchase ||--|{ product
+purchase ||--|{ price
+product }o--o{ category
+store }o--o{ category
+cart ||--|{ purchase
+cart }|--|| store
+
+
+@enduml
