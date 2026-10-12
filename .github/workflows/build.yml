@@ -17,8 +17,8 @@ jobs:
       run:
         working-directory: Sponde
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: '10.0.400'
       - run: dotnet restore Sponde.slnx --locked-mode
@@ -31,7 +31,7 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - id: version
         shell: bash
         env:
@@ -52,8 +52,8 @@ jobs:
         working-directory: Sponde
         shell: pwsh
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: '10.0.400'
       - run: dotnet restore Sponde.slnx --locked-mode
@@ -68,7 +68,7 @@ jobs:
           ./packaging/windows/Build-Msi.ps1 -PayloadDirectory artifacts/publish/win-x64 -Version $previousVersion -OutputDirectory artifacts/upgrade-test
           ./packaging/windows/Build-Msi.ps1 -PayloadDirectory artifacts/publish/win-x64 -Version $env:PACKAGE_VERSION -OutputDirectory artifacts/packages
           ./packaging/windows/Test-Msi.ps1 -Installer "artifacts/packages/Sponde-$env:PACKAGE_VERSION-win-x64.msi" -PreviousInstaller "artifacts/upgrade-test/Sponde-$previousVersion-win-x64.msi" -ExpectedVersion $env:PACKAGE_VERSION
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: windows-msi
           path: Sponde/artifacts/packages/*.msi
@@ -82,8 +82,8 @@ jobs:
         working-directory: Sponde
         shell: bash
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: '10.0.400'
       - run: dotnet restore Sponde.slnx --locked-mode
@@ -103,7 +103,7 @@ jobs:
               bash packaging/linux/build-rpm.sh artifacts/publish/linux-x64 "$PACKAGE_VERSION" artifacts/packages
               bash packaging/linux/test-rpm.sh artifacts/packages/*.rpm
             '
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: fedora-rpm
           path: Sponde/artifacts/packages/*.rpm
@@ -121,7 +121,7 @@ jobs:
       RELEASE_VERSION: ${{ needs.version.outputs.version }}
       RELEASE_SHA: ${{ github.sha }}
     steps:
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: '*-*'
           merge-multiple: true
@@ -141,7 +141,12 @@ jobs:
           else
             gh api --method POST "repos/$GH_REPO/git/refs" -f "ref=refs/tags/$tag" -f "sha=$RELEASE_SHA"
           fi
-          if ! gh release view "$tag" >/dev/null 2>&1; then
+          if gh release view "$tag" --json isDraft --jq .isDraft > is-draft.txt 2>/dev/null; then
+            if [[ $(cat is-draft.txt) == false ]]; then
+              echo 'Release is already published; keeping its installer assets immutable.'
+              exit 0
+            fi
+          else
             gh release create "$tag" --verify-tag --draft --title "Sponde $RELEASE_VERSION" --notes-file RELEASE_NOTES.md
           fi
           gh release upload "$tag" ./*.msi ./*.rpm SHA256SUMS --clobber

@@ -18,7 +18,9 @@ Only a successful run on `main` publishes a GitHub release. Pull requests build
 and test packages, uploading workflow artifacts for review without publishing.
 The release contains both installers and `SHA256SUMS`, and its tag references
 the exact tested commit. Publication starts as a draft and finishes after both
-assets upload. Re-running a run retains its version and replaces its assets.
+assets upload. Re-running a run retains its version.
+Published release assets remain unchanged on re-runs; interrupted draft releases
+can resume with replacement uploads.
 Only the publication job receives write access; action references are pinned.
 
 ## Versions
