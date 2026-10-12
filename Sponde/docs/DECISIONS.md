@@ -30,6 +30,9 @@ proposed means awaiting discussion. Implementation sign-off received 2026-10-12.
 | D023 | Accepted and implemented | No Excel import; workbook is only an example of the desired UI and analysis | Replaces workbook bootstrap/migration; transactions come from PDFs, plans are managed in Sponde; launcher uses a separate PDF-only dataset |
 | D024 | Implementation choice under D023 | Extensible content-based PDF format registry with shared validation | N26, VR and payroll adapters; no filename conventions or hardcoded user-name classification; new adapters can be registered without changing import orchestration |
 | D025 | Accepted and implemented | Select and import multiple PDFs together | Per-file previews/results, bank-before-payroll ordering, duplicate detection and cancellation; labels derive from document contents, original filenames remain as provenance |
+| D026 | Accepted | Publish Windows MSI and latest-stable Fedora RPM through GitHub Actions after merges into main | Self-contained x64 packages, native install/start/uninstall checks, release checksums; see RELEASING.md |
+| D027 | Accepted | Protect main and move development to feature branches | PRs and passing Windows/Linux/package checks required; solo-maintainer approval count remains zero |
+| D028 | Implementation choice | MSI/RPM versions share a major/minor prefix and workflow run number | Stable upgrade identity, exact-commit release tags, unsigned packages until signing identities are configured |
 
 ## Explicit user responses
 

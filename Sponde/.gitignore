@@ -2,6 +2,7 @@ bin/
 obj/
 .local/
 TestResults/
+artifacts/
 *.sqlite*
 *.spondebackup
 *.pdf

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Sponde
+Comment=Offline budgeting and accounting
+Comment[de]=Offline-Budget und Buchhaltung
+Exec=sponde
+Icon=sponde
+Terminal=false
+Categories=Office;Finance;
+StartupWMClass=Sponde
