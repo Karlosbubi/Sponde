@@ -55,13 +55,17 @@ is not complete; this document distinguishes delivered code from verified use.
   and Linux x64 self-contained publishing succeeds.
 - Native Windows GUI startup with the prepared real dataset succeeds.
 - Locked dependency restore and formatting checks are part of validation.
-- CI has been written, but has not been run on GitHub in this session.
+- GitHub CI passes Release builds, all 38 tests and formatting on Windows and
+  Ubuntu. MSI checks pass install, major upgrade, native GUI startup, uninstall
+  and user-data preservation. Fedora 44 checks pass RPM build, dependency-aware
+  installation, native X11 GUI startup under Xvfb, uninstall and data preservation.
 
 ## Remaining acceptance and limits
 
-- Actual Fedora and openSUSE Slowroll GUI/packaging tests require those desktops.
-  Cross-compilation and headless Windows tests do not establish native Linux
-  runtime behavior. The initial Linux backend uses X11/XWayland.
+- Interactive Fedora and openSUSE Slowroll desktop acceptance remains outstanding.
+  Fedora's native container smoke test verifies startup and packaging, without
+  covering real desktop sessions, file dialogs or every screen. The initial Linux
+  backend uses X11/XWayland.
 - This is an unsigned development build. Windows Smart App Control initially
   blocked a compiled DLL; later standard test and tool execution succeeded.
   The user confirmed on 2026-10-12 that Smart App Control is explicitly off.
