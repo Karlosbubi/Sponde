@@ -1,0 +1,26 @@
+name: Build and test
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  desktop:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: Sponde
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.400'
+      - run: dotnet restore Sponde.slnx --locked-mode
+      - run: dotnet build Sponde.slnx --no-restore -c Release
+      - run: dotnet test Sponde.Tests/Sponde.Tests.csproj --no-build --no-restore -c Release
+      - run: dotnet format Sponde.slnx --no-restore --verify-no-changes
+      - run: dotnet publish Sponde/Sponde.csproj --no-restore -c Release -r win-x64 --self-contained true -o artifacts/win-x64
+      - run: dotnet publish Sponde/Sponde.csproj --no-restore -c Release -r linux-x64 --self-contained true -o artifacts/linux-x64

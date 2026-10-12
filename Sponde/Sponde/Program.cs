@@ -1,9 +1,9 @@
-﻿namespace Sponde;
+using Avalonia;
+namespace Sponde;
 
-class Program
+internal static class Program
 {
-    static void Main(string[] args)
-    {
-        Console.WriteLine("Hello, World!");
-    }
+    [STAThread]
+    public static void Main(string[] args) => BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+    public static Avalonia.AppBuilder BuildAvaloniaApp() => Avalonia.AppBuilder.Configure<App>().UsePlatformDetect().LogToTrace();
 }

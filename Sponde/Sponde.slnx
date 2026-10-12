@@ -9,4 +9,9 @@
     <File Path="..\Utils\init_db.sql" />
   </Folder>
   <Project Path="Sponde/Sponde.csproj" />
+  <Project Path="Sponde.Domain/Sponde.Domain.csproj" />
+  <Project Path="Sponde.Application/Sponde.Application.csproj" />
+  <Project Path="Sponde.Infrastructure/Sponde.Infrastructure.csproj" />
+  <Project Path="Sponde.Tests/Sponde.Tests.csproj" />
+  <Project Path="Sponde.Tools/Sponde.Tools.csproj" />
 </Solution>
