@@ -5,6 +5,7 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <ApplicationIcon>../packaging/assets/sponde.ico</ApplicationIcon>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="../Sponde.Infrastructure/Sponde.Infrastructure.csproj" />

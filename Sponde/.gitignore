@@ -2,6 +2,8 @@ bin/
 obj/
 .local/
 TestResults/
+artifacts/
+.wix/
 *.sqlite*
 *.spondebackup
 *.pdf

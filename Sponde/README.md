@@ -111,3 +111,12 @@ text; use an ignored local directory only.
 
 See [the plan](docs/PLAN.md), [decisions](docs/DECISIONS.md),
 [architecture](docs/ARCHITECTURE.md) and [implementation status](docs/STATUS.md).
+
+## Installers and releases
+
+GitHub Actions builds a Windows x64 MSI and an RPM on the latest stable Fedora.
+Pull requests validate packages; successful merges to `main` publish both to
+[GitHub Releases](https://github.com/Karlosbubi/Sponde/releases) with checksums.
+Packages include .NET and preserve local user data when uninstalled.
+See [release and branch policy](docs/RELEASING.md) for build instructions,
+versioning, validation and the current unsigned-package status.
