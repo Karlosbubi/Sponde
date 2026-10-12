@@ -6,7 +6,7 @@ version=$2
 output=$(realpath -m "$3")
 [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'Invalid version' >&2; exit 2; }
 [[ -f "$payload/Sponde" ]] || { echo 'Published Linux executable missing' >&2; exit 2; }
-if find "$payload" -type f \( -iname '*.pdf' -o -iname '*.xlsx' -o -iname '*.sqlite*' -o -iname '*.spondebackup' \) -print -quit | grep -q .; then echo 'Payload contains private data' >&2; exit 1; fi
+if find "$payload" -regextype posix-extended -type f -iregex '.*\.(pdf|xlsx|spondebackup|sqlite3?(-wal|-shm)?)' -print -quit | grep -q .; then echo 'Payload contains private data' >&2; exit 1; fi
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 repo_root=$(cd "$script_dir/../../.." && pwd)
 work=$(mktemp -d /tmp/sponde-rpm.XXXXXXXX)
