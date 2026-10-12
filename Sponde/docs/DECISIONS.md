@@ -33,6 +33,7 @@ proposed means awaiting discussion. Implementation sign-off received 2026-10-12.
 | D026 | Accepted | Publish Windows MSI and latest-stable Fedora RPM through GitHub Actions after merges into main | Self-contained x64 packages, native install/start/uninstall checks, release checksums; see RELEASING.md |
 | D027 | Accepted | Protect main and move development to feature branches | PRs and passing Windows/Linux/package checks required; solo-maintainer approval count remains zero |
 | D028 | Implementation choice | MSI/RPM versions share a major/minor prefix and workflow run number | Stable upgrade identity, exact-commit release tags, unsigned packages until signing identities are configured |
+| D029 | Required and authorized | Sanitize the complete repository, including parser implementation and history | No private source details in code/docs/fixtures/artifacts; generic structural parsing, contributor pseudonym, CI pattern checks and manual review; user explicitly authorized complete history removal |
 
 ## Explicit user responses
 

@@ -39,10 +39,19 @@ public static class PayrollParser
             deductions.Add(new(label, new(Value(label))));
         var net = Value("Gesetzliches Netto");
         var correction = Value("Summe Rückrechnung", false);
-        var canteen = -Value("Synthetic deduction", false) - Value("Abzug Essen Prepaid", false);
+        // Read post-net adjustment rows by their location and numeric columns,
+        // never by employee, employer or meal-provider names.
+        var netIndex = Array.FindIndex(lines, l => l.StartsWith("Gesetzliches Netto", StringComparison.Ordinal));
+        var payoutIndex = Array.FindIndex(lines, l => l.StartsWith("Überweisung", StringComparison.Ordinal));
+        var postNet = lines.Skip(netIndex + 1).Take(Math.Max(0, payoutIndex - netIndex - 1))
+            .Where(l => !l.StartsWith("Summe Rückrechnung", StringComparison.Ordinal))
+            .Select(l => Regex.Match(l, @"^.+?\s+(-?[\d.]+,\d{2})(?:\s+EUR|\s*€)?$"))
+            .Where(m => m.Success).Select(m => StatementReader.Cents(m.Groups[1].Value)).ToArray();
+        var postNetDeductions = -postNet.Sum();
         var payout = Value("Überweisung");
         var earnings = ImmutableArray.CreateBuilder<PayrollLine>();
-        foreach (var line in lines.Where(l => l.Contains("LSG", StringComparison.Ordinal) || l.StartsWith("T-ZUG", StringComparison.Ordinal) || l.StartsWith("Transform", StringComparison.Ordinal)))
+        var grossIndex = Array.FindIndex(lines, l => l.StartsWith("Gesamtbrutto", StringComparison.Ordinal));
+        foreach (var line in lines.Take(Math.Max(0, grossIndex)).Where(l => Regex.IsMatch(l, @"\S.+\s+-?[\d.]+,\d{2}\s*$")))
         {
             var values = Regex.Matches(line, @"-?[\d.]+,\d{2}");
             if (values.Count > 0)
@@ -62,8 +71,8 @@ public static class PayrollParser
         }
         if (adjustments.Count > 0 && adjustments.Sum(a => a.NetEffect.Cents) != correction) issues.Add("Retroactive pages do not reconcile to the current correction amount.");
         if (gross - deductions.Sum(l => l.Amount.Cents) != net) issues.Add("Gross salary and statutory deductions do not reconcile to net pay.");
-        if (net + correction - canteen != payout) issues.Add("Net pay, corrections and canteen deductions do not reconcile to payout.");
-        var slip = new Payslip(source, month, new(gross), new(deductions.Sum(l => l.Amount.Cents)), new(net), new(correction), new(canteen), new(payout), deductions.ToImmutable(), earnings.ToImmutable(), adjustments.ToImmutable());
-        return new(source, new([], [], [], [slip]), [new(path, hash)], issues.ToImmutable(), "pdf-payroll-v1");
+        if (net + correction - postNetDeductions != payout) issues.Add("Net pay, corrections and post-net deductions do not reconcile to payout.");
+        var slip = new Payslip(source, month, new(gross), new(deductions.Sum(l => l.Amount.Cents)), new(net), new(correction), new(postNetDeductions), new(payout), deductions.ToImmutable(), earnings.ToImmutable(), adjustments.ToImmutable());
+        return new(source, new([], [], [], [slip]), [new(path, hash)], issues.ToImmutable(), "pdf-payroll-v2");
     }
 }

@@ -173,7 +173,6 @@ public static class VrParser
                 var party = details.Count > 0 ? details[0] : pending.Counterparty;
                 var item = StatementReader.Create(hash, rows.Count, pending.Date, "VR", party, pending.Amount.Cents, source, page.Number,
                     pending.Purpose + " " + string.Join(" ", details.Skip(1)), pending.ValueDate);
-                if (item.Purpose.Contains("VERMOEGENSDEPOT", StringComparison.OrdinalIgnoreCase)) item = item with { Kind = MovementKind.Savings, Category = "Depot", Review = ReviewStatus.Assigned };
                 rows.Add(item); pending = null; details.Clear();
             }
             foreach (var line in StatementReader.Lines(page.Text))

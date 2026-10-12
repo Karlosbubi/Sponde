@@ -22,6 +22,9 @@ jobs:
         with:
           dotnet-version: '10.0.400'
       - run: dotnet restore Sponde.slnx --locked-mode
+      - name: Check tracked files for privacy leaks
+        shell: pwsh
+        run: ./packaging/Check-RepositoryPrivacy.ps1
       - run: dotnet build Sponde.slnx --no-restore -c Release
       - run: dotnet test Sponde.Tests/Sponde.Tests.csproj --no-build --no-restore -c Release
       - run: dotnet format Sponde.slnx --no-restore --verify-no-changes

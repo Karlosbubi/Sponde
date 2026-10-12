@@ -25,11 +25,18 @@ try {
     $taskExecutable = Join-Path $env:ProgramFiles 'Sponde/Sponde.exe'
     if (-not (Test-Path -LiteralPath $taskExecutable)) { throw 'Installed executable missing.' }
     $taskApplication = Start-Process -FilePath $taskExecutable -ArgumentList @('--data-dir', ('"' + $taskData + '"')) -PassThru -WindowStyle Hidden
-    Start-Sleep -Seconds 4
-    if ($taskApplication.HasExited) { throw "Installed application exited during startup: $($taskApplication.ExitCode)" }
-    Stop-Process -Id $taskApplication.Id
-    if (-not (Test-Path -LiteralPath (Join-Path $taskData 'finance.sqlite'))) { throw 'Application did not initialize its dataset.' }
+    try {
+        $taskDeadline = [DateTime]::UtcNow.AddSeconds(45)
+        do {
+            $taskApplication.Refresh()
+            if ($taskApplication.HasExited) { throw "Installed application exited during startup: $($taskApplication.ExitCode)" }
+            $taskReady = (Test-Path -LiteralPath (Join-Path $taskData 'finance.sqlite')) -and $taskApplication.MainWindowHandle -ne [IntPtr]::Zero
+            if (-not $taskReady) { Start-Sleep -Milliseconds 250 }
+        } while (-not $taskReady -and [DateTime]::UtcNow -lt $taskDeadline)
+        if (-not $taskReady) { throw 'Installed application did not initialize its dataset and GUI before the startup deadline.' }
+    } finally { if (-not $taskApplication.HasExited) { Stop-Process -Id $taskApplication.Id } }
 } finally { Invoke-Msi '/x' $taskInstaller 'uninstall.log' }
 if (Test-Path -LiteralPath (Join-Path $env:ProgramFiles 'Sponde/Sponde.exe')) { throw 'Uninstall left the executable installed.' }
 if (-not (Test-Path -LiteralPath $taskSentinel)) { throw 'Uninstall removed user data.' }
+if (-not (Test-Path -LiteralPath (Join-Path $taskData 'finance.sqlite'))) { throw 'Uninstall removed the database.' }
 Write-Output 'MSI install, upgrade, native app startup, uninstall and user-data preservation passed.'

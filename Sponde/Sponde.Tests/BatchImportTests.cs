@@ -13,25 +13,25 @@ public sealed class BatchImportTests
     public void MixedSelectionImportsBankBeforePayrollRegardlessOfSelectionOrder()
     {
         using var f = new Fixture();
-        var bank = f.Bank("random-a.pdf", new(2026, 9, 3), 70000, 0, 70000);
+        var bank = f.Bank("random-a.pdf", new(2000, 9, 3), 70000, 0, 70000);
         var payroll = f.Payroll("random-b.pdf");
         var batch = f.Service.PreviewStatements([payroll, bank]);
         Assert.Equal(2, batch.ReadyCount);
-        Assert.Equal("Entgeltnachweis · 2026-09", batch.Items[0].Preview.DisplayName);
-        Assert.Equal("N26 · 2026-09", batch.Items[1].Preview.DisplayName);
+        Assert.Equal("Entgeltnachweis · 2000-09", batch.Items[0].Preview.DisplayName);
+        Assert.Equal("N26 · 2000-09", batch.Items[1].Preview.DisplayName);
         var result = f.Service.CommitStatements(batch);
         Assert.All(result.Files, r => Assert.Equal(FileImportOutcome.Imported, r.Outcome));
         Assert.Equal("random-a.pdf", result.Files[0].OriginalName);
         Assert.Single(f.Service.Read().Transactions); Assert.Single(f.Service.Read().Payslips);
         Assert.Empty(f.Service.Read().Budget);
-        Assert.Equal(70000, Reports.Month(f.Service.Read().Transactions, new(2026, 9, 1)).Income);
+        Assert.Equal(70000, Reports.Month(f.Service.Read().Transactions, new(2000, 9, 1)).Income);
     }
 
     [Fact]
     public void UnsupportedAndUnreadableFilesDoNotPreventValidImports()
     {
         using var f = new Fixture();
-        var bank = f.Bank("good.pdf", new(2026, 9, 3), 70000, 0, 70000);
+        var bank = f.Bank("good.pdf", new(2000, 9, 3), 70000, 0, 70000);
         var unknown = f.Write("unknown.pdf", "An unsupported document");
         var missing = Path.Combine(f.Root, "missing.pdf");
         var batch = f.Service.PreviewStatements([unknown, missing, bank]);
@@ -46,7 +46,7 @@ public sealed class BatchImportTests
     public void IdenticalContentWithDifferentNamesIsImportedOnlyOnce()
     {
         using var f = new Fixture();
-        var bank = f.Bank("original.pdf", new(2026, 9, 3), 70000, 0, 70000);
+        var bank = f.Bank("original.pdf", new(2000, 9, 3), 70000, 0, 70000);
         var copy = Path.Combine(f.Root, "totally-different-name.pdf"); File.Copy(bank, copy);
         var batch = f.Service.PreviewStatements([bank, copy]);
         Assert.Equal(1, batch.ReadyCount); Assert.True(batch.Items[1].Duplicate);
@@ -61,7 +61,7 @@ public sealed class BatchImportTests
     public void ReimportingMixedBatchDoesNotDuplicatePaymentsOrPayroll()
     {
         using var f = new Fixture();
-        var bank = f.Bank("a.pdf", new(2026, 9, 3), 70000, 0, 70000); var payroll = f.Payroll("b.pdf");
+        var bank = f.Bank("a.pdf", new(2000, 9, 3), 70000, 0, 70000); var payroll = f.Payroll("b.pdf");
         f.Service.CommitStatements(f.Service.PreviewStatements([payroll, bank]));
         var repeated = f.Service.CommitStatements(f.Service.PreviewStatements([bank, payroll]));
         Assert.All(repeated.Files, r => Assert.Equal(FileImportOutcome.AlreadyPresent, r.Outcome));
@@ -72,8 +72,8 @@ public sealed class BatchImportTests
     public void FailedBankDoesNotPermitPayrollBasedOnlyOnItsUncommittedPreview()
     {
         using var f = new Fixture();
-        var bank = f.Bank("salary.pdf", new(2026, 9, 3), 70000, 0, 70000);
-        var other = f.Bank("other.pdf", new(2026, 10, 3), -500, 70000, 69500);
+        var bank = f.Bank("salary.pdf", new(2000, 9, 3), 70000, 0, 70000);
+        var other = f.Bank("other.pdf", new(2000, 10, 3), -500, 70000, 69500);
         var payroll = f.Payroll("pay.pdf");
         var batch = f.Service.PreviewStatements([payroll, bank, other]); Assert.Equal(3, batch.ReadyCount);
         File.AppendAllText(bank, "changed after review");
@@ -88,7 +88,7 @@ public sealed class BatchImportTests
     public void CancelledBatchProducesExplicitResultsWithoutCommittingFiles()
     {
         using var f = new Fixture();
-        var bank = f.Bank("salary.pdf", new(2026, 9, 3), 70000, 0, 70000); var payroll = f.Payroll("pay.pdf");
+        var bank = f.Bank("salary.pdf", new(2000, 9, 3), 70000, 0, 70000); var payroll = f.Payroll("pay.pdf");
         var batch = f.Service.PreviewStatements([bank, payroll]);
         using var cancellation = new CancellationTokenSource(); cancellation.Cancel();
         var result = f.Service.CommitStatements(batch, cancellation.Token);
@@ -100,8 +100,8 @@ public sealed class BatchImportTests
     public void SameFilenameInDifferentFoldersDoesNotMergeDifferentPeriods()
     {
         using var f = new Fixture();
-        var september = f.Bank("first/statement.pdf", new(2026, 9, 3), 70000, 0, 70000);
-        var october = f.Bank("second/statement.pdf", new(2026, 10, 3), -500, 70000, 69500);
+        var september = f.Bank("first/statement.pdf", new(2000, 9, 3), 70000, 0, 70000);
+        var october = f.Bank("second/statement.pdf", new(2000, 10, 3), -500, 70000, 69500);
         var result = f.Service.CommitStatements(f.Service.PreviewStatements([september, october]));
         Assert.All(result.Files, r => Assert.Equal(FileImportOutcome.Imported, r.Outcome));
         Assert.Equal(2, f.Service.Read().Transactions.Length); Assert.Equal(2, f.Service.Read().Statements.Length);
@@ -111,7 +111,7 @@ public sealed class BatchImportTests
     public void RenamedReissuedStatementDoesNotDoubleCountProjectedPayrollIncome()
     {
         using var f = new Fixture();
-        var original = f.Bank("first-name.pdf", new(2026, 9, 3), 70000, 0, 70000);
+        var original = f.Bank("first-name.pdf", new(2000, 9, 3), 70000, 0, 70000);
         var reissued = f.Write("different-name.pdf", File.ReadAllText(original) + "\nReissued footer");
         var payroll = f.Payroll("payout.pdf");
         var batch = f.Service.PreviewStatements([payroll, original, reissued]);
@@ -154,7 +154,7 @@ public sealed class BatchImportTests
         }
         public string Payroll(string name) => Write(name, """
             Entgeltnachweis
-            für September 2026
+            für September 2000
             Gesamtbrutto (EBeschV) 1.000,00 9.000,00
             Lohnsteuer 100,00 100,00 900,00
             Kirchensteuer 10,00 10,00 90,00
