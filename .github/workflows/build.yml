@@ -1,7 +1,10 @@
-name: Build and test
+name: Build, package and release
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
@@ -15,12 +18,128 @@ jobs:
         working-directory: Sponde
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: '10.0.400'
       - run: dotnet restore Sponde.slnx --locked-mode
       - run: dotnet build Sponde.slnx --no-restore -c Release
       - run: dotnet test Sponde.Tests/Sponde.Tests.csproj --no-build --no-restore -c Release
       - run: dotnet format Sponde.slnx --no-restore --verify-no-changes
-      - run: dotnet publish Sponde/Sponde.csproj --no-restore -c Release -r win-x64 --self-contained true -o artifacts/win-x64
-      - run: dotnet publish Sponde/Sponde.csproj --no-restore -c Release -r linux-x64 --self-contained true -o artifacts/linux-x64
+  version:
+    name: Release version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - id: version
+        shell: bash
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          prefix=$(cat Sponde/packaging/version-prefix.txt)
+          [[ $prefix =~ ^[0-9]+\.[0-9]+$ ]]
+          IFS=. read -r major minor <<< "$prefix"
+          (( major <= 255 && minor <= 255 && BUILD_NUMBER <= 65535 ))
+          echo "version=$prefix.$BUILD_NUMBER" >> "$GITHUB_OUTPUT"
+  msi:
+    name: Windows MSI
+    needs: [desktop, version]
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: Sponde
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: '10.0.400'
+      - run: dotnet restore Sponde.slnx --locked-mode
+      - run: dotnet publish Sponde/Sponde.csproj --no-restore -c Release -r win-x64 --self-contained true -p:Version=${{ needs.version.outputs.version }} -p:DebugType=None -p:DebugSymbols=false -o artifacts/publish/win-x64
+      - name: Build current and previous-version installers
+        env:
+          PACKAGE_VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          $parts = $env:PACKAGE_VERSION.Split('.')
+          $previousVersion = "$($parts[0]).$($parts[1]).$([int]$parts[2] - 1)"
+          ./packaging/windows/Build-Msi.ps1 -PayloadDirectory artifacts/publish/win-x64 -Version $previousVersion -OutputDirectory artifacts/upgrade-test
+          ./packaging/windows/Build-Msi.ps1 -PayloadDirectory artifacts/publish/win-x64 -Version $env:PACKAGE_VERSION -OutputDirectory artifacts/packages
+          ./packaging/windows/Test-Msi.ps1 -Installer "artifacts/packages/Sponde-$env:PACKAGE_VERSION-win-x64.msi" -PreviousInstaller "artifacts/upgrade-test/Sponde-$previousVersion-win-x64.msi" -ExpectedVersion $env:PACKAGE_VERSION
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: windows-msi
+          path: Sponde/artifacts/packages/*.msi
+          if-no-files-found: error
+  rpm:
+    name: Fedora RPM
+    needs: [desktop, version]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Sponde
+        shell: bash
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: '10.0.400'
+      - run: dotnet restore Sponde.slnx --locked-mode
+      - run: dotnet publish Sponde/Sponde.csproj --no-restore -c Release -r linux-x64 --self-contained true -p:Version=${{ needs.version.outputs.version }} -p:DebugType=None -p:DebugSymbols=false -o artifacts/publish/linux-x64
+      - name: Build and test on latest stable Fedora
+        env:
+          PACKAGE_VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$GITHUB_WORKSPACE:/repo" -w /repo/Sponde \
+            -e PACKAGE_VERSION registry.fedoraproject.org/fedora:latest bash -euxo pipefail -c '
+              cat /etc/fedora-release
+              dnf install -y rpm-build desktop-file-utils xorg-x11-server-Xvfb dejavu-sans-fonts
+              bash packaging/linux/build-rpm.sh artifacts/publish/linux-x64 "$PACKAGE_VERSION" artifacts/packages
+              bash packaging/linux/test-rpm.sh artifacts/packages/*.rpm
+            '
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: fedora-rpm
+          path: Sponde/artifacts/packages/*.rpm
+          if-no-files-found: error
+  release:
+    name: Publish GitHub release
+    needs: [version, msi, rpm]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_VERSION: ${{ needs.version.outputs.version }}
+      RELEASE_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: '*-*'
+          merge-multiple: true
+          path: packages
+      - name: Publish tested installers with checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd packages
+          tag="v$RELEASE_VERSION"
+          test "$(find . -maxdepth 1 -name '*.msi' | wc -l)" -eq 1
+          test "$(find . -maxdepth 1 -name '*.rpm' | wc -l)" -eq 1
+          sha256sum ./*.msi ./*.rpm > SHA256SUMS
+          printf 'Windows 11: download and run the MSI installer.\n\nFedora (latest stable, x86_64): install with `sudo dnf install ./sponde-*.rpm`.\n\nBoth packages include .NET; no separate runtime installation is required. Installers are unsigned. User data remains local and survives uninstall. Use the app backup/restore commands to move data between machines.\n\nBuilt from commit %s.\n' "$RELEASE_SHA" > RELEASE_NOTES.md
+          if gh api "repos/$GH_REPO/git/ref/tags/$tag" > tag.json 2>/dev/null; then
+            test "$(jq -r .object.sha tag.json)" = "$RELEASE_SHA"
+          else
+            gh api --method POST "repos/$GH_REPO/git/refs" -f "ref=refs/tags/$tag" -f "sha=$RELEASE_SHA"
+          fi
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" --verify-tag --draft --title "Sponde $RELEASE_VERSION" --notes-file RELEASE_NOTES.md
+          fi
+          gh release upload "$tag" ./*.msi ./*.rpm SHA256SUMS --clobber
+          release_id=$(gh api "repos/$GH_REPO/releases/tags/$tag" --jq .id)
+          gh api --method PATCH "repos/$GH_REPO/releases/$release_id" -F draft=false -f make_latest=legacy

@@ -1,0 +1,35 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package Id="Karlosbubi.Sponde" Name="Sponde" Manufacturer="Sponde contributors"
+           Version="$(ProductVersion)" Language="1033" Scope="perMachine">
+    <MajorUpgrade DowngradeErrorMessage="A newer version of Sponde is already installed." Schedule="afterInstallInitialize" />
+    <MediaTemplate EmbedCab="yes" />
+    <Icon Id="AppIcon" SourceFile="$(AssetsDir)\sponde.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/Karlosbubi/Sponde" />
+    <WixVariable Id="WixUILicenseRtf" Value="$(LicenseRtf)" />
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="Sponde" />
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="Sponde">
+        <Component Id="StartMenuShortcut" Guid="*">
+          <Shortcut Id="SpondeShortcut" Name="Sponde" Description="Offline budget and accounting"
+                    Target="[INSTALLFOLDER]Sponde.exe" WorkingDirectory="INSTALLFOLDER" Icon="AppIcon" />
+          <RemoveFolder Id="RemoveStartMenuFolder" On="uninstall" />
+          <RegistryValue Root="HKLM" Key="Software\Karlosbubi\Sponde" Name="Installed" Type="integer" Value="1" KeyPath="yes" />
+        </Component>
+      </Directory>
+    </StandardDirectory>
+    <Feature Id="MainFeature" Title="Sponde" Level="1">
+      <ComponentGroupRef Id="PublishedApplication" />
+      <ComponentRef Id="StartMenuShortcut" />
+    </Feature>
+  </Package>
+  <Fragment>
+    <ComponentGroup Id="PublishedApplication" Directory="INSTALLFOLDER">
+      <Files Include="$(PayloadDir)\**" />
+    </ComponentGroup>
+  </Fragment>
+</Wix>
