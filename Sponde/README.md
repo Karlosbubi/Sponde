@@ -111,6 +111,7 @@ text; use an ignored local directory only.
 
 See [the plan](docs/PLAN.md), [decisions](docs/DECISIONS.md),
 [architecture](docs/ARCHITECTURE.md) and [implementation status](docs/STATUS.md).
+Repository contributions must follow [the privacy policy](docs/PRIVACY.md).
 
 ## Installers and releases
 

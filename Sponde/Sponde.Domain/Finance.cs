@@ -49,7 +49,7 @@ public sealed record BudgetLine(string Category, Money? Monthly, string Account,
 public sealed record PayrollAdjustment(DateOnly EarningsPeriod, int Page, Money NetEffect);
 public sealed record PayrollLine(string Label, Money Amount);
 public sealed record Payslip(string Source, DateOnly Period, Money Gross, Money Deductions,
-    Money Net, Money Correction, Money Canteen, Money Payout, ImmutableArray<PayrollLine> Lines,
+    Money Net, Money Correction, [property: System.Text.Json.Serialization.JsonPropertyName("Canteen")] Money PostNetDeductions, Money Payout, ImmutableArray<PayrollLine> Lines,
     ImmutableArray<PayrollLine> Earnings = default, ImmutableArray<PayrollAdjustment> Adjustments = default);
 public sealed record Allocation(Guid TransactionId, string Category, Money Amount);
 public sealed record TransferLink(Guid Outgoing, Guid Incoming);

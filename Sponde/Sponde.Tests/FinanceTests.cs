@@ -10,7 +10,7 @@ namespace Sponde.Tests;
 
 public sealed class FinanceTests
 {
-    private static Transaction Row(long cents, MovementKind kind = MovementKind.Expense, ReviewStatus review = ReviewStatus.Assigned) => new(Guid.NewGuid(), new(2026, 9, 3), "N26", "Synthetic merchant", new(cents), kind, "Food", review, "", "synthetic.pdf", 1, "Synthetic purpose", null, "");
+    private static Transaction Row(long cents, MovementKind kind = MovementKind.Expense, ReviewStatus review = ReviewStatus.Assigned) => new(Guid.NewGuid(), new(2000, 9, 3), "N26", "Synthetic merchant", new(cents), kind, "Food", review, "", "synthetic.pdf", 1, "Synthetic purpose", null, "");
     [Fact]
     public void MoneyRejectsFractionalCentsAndPreservesNegativeValues()
     {
@@ -30,13 +30,13 @@ public sealed class FinanceTests
                 Assert.Equal(row.Amount.Cents, entry.Postings[0].DebitCents);
             }
         Assert.Equal("Clearing:Unclassified", JournalEntry.For(Row(-500, review: ReviewStatus.Unknown)).Postings[1].Account);
-        Assert.Throws<InvalidOperationException>(() => new JournalEntry(Guid.NewGuid(), new(2026, 1, 1), [new("a", 100), new("b", -99)]).Validate());
+        Assert.Throws<InvalidOperationException>(() => new JournalEntry(Guid.NewGuid(), new(2000, 1, 1), [new("a", 100), new("b", -99)]).Validate());
     }
     [Fact]
     public void TransfersSavingsAndRefundsHaveDifferentBudgetMeaning()
     {
         Transaction[] rows = [Row(10000, MovementKind.Income), Row(-3000), Row(500, MovementKind.Refund), Row(-2000, MovementKind.Savings), Row(-1000, MovementKind.Transfer)];
-        var month = Reports.Month(rows, new(2026, 9, 1));
+        var month = Reports.Month(rows, new(2000, 9, 1));
         Assert.Equal(10000, month.Income); Assert.Equal(2500, month.Expenses); Assert.Equal(2000, month.Savings);
         Assert.Equal(7500, month.Surplus); Assert.Equal(4500, month.Movement);
         Assert.Equal(2500, Reports.Categories(rows).Single().Cents);
@@ -45,7 +45,7 @@ public sealed class FinanceTests
     public void ReconciliationChecksBothMoneyAndIndependentCount()
     {
         Transaction[] rows = [Row(-500)];
-        var s = new StatementBalance("synthetic.pdf", "N26", new(2026, 9, 1), new(1000), new(500), 2);
+        var s = new StatementBalance("synthetic.pdf", "N26", new(2000, 9, 1), new(1000), new(500), 2);
         Assert.False(Reports.Reconcile(rows, s).Balanced);
         Assert.True(Reports.Reconcile(rows, s with { ExpectedCount = 1 }).Balanced);
     }
@@ -87,11 +87,11 @@ public sealed class FinanceTests
     {
         using var f = new StoreFixture(); var salary = Row(70000, MovementKind.Income);
         f.Store.Commit(f.Preview([salary]));
-        var slip = new Payslip("payroll.pdf", new(2026, 9, 1), new(100000), new(30000), new(70000), new(0), new(0), new(70000), [new("Tax", new(30000))]);
+        var slip = new Payslip("payroll.pdf", new(2000, 9, 1), new(100000), new(30000), new(70000), new(0), new(0), new(70000), [new("Tax", new(30000))]);
         var preview = f.Preview([]) with { ParserVersion = "pdf-payroll-v1", Data = new([], [], [], [slip]) };
         f.Store.Commit(preview);
         Assert.Single(f.Store.Read().Transactions); Assert.Single(f.Store.Read().Payslips);
-        Assert.Equal(70000, Reports.Month(f.Store.Read().Transactions, new(2026, 9, 1)).Income);
+        Assert.Equal(70000, Reports.Month(f.Store.Read().Transactions, new(2000, 9, 1)).Income);
         Assert.Throws<InvalidOperationException>(() => f.Store.Classify(salary.Id, MovementKind.Expense, "Wrong", ReviewStatus.Assigned, ""));
     }
     [Fact]

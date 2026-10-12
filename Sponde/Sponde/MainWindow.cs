@@ -361,7 +361,7 @@ public sealed class MainWindow : Window
         foreach (var slip in data.Payslips.OrderBy(p => p.Period))
         {
             var body = Stack(9); body.Children.Add(Text(Presentation.Month(slip.Period), 20, true)); body.Children.Add(Text($"Brutto {Presentation.Currency(slip.Gross.Cents)} · gesetzliche Abzüge {Presentation.Currency(slip.Deductions.Cents)} · Netto {Presentation.Currency(slip.Net.Cents)}"));
-            body.Children.Add(Text($"Korrektur {Presentation.Currency(slip.Correction.Cents)} · Kantine {Presentation.Currency(slip.Canteen.Cents)} · Auszahlung {Presentation.Currency(slip.Payout.Cents)}"));
+            body.Children.Add(Text($"Korrektur {Presentation.Currency(slip.Correction.Cents)} · Abzüge nach Netto {Presentation.Currency(slip.PostNetDeductions.Cents)} · Auszahlung {Presentation.Currency(slip.Payout.Cents)}"));
             foreach (var l in slip.Lines) body.Children.Add(Text(l.Label + "  " + Presentation.Currency(l.Amount.Cents), 12)); body.Children.Add(ActionButton("Entgeltnachweis öffnen", () => OpenSource(slip.Source))); root.Children.Add(Card(body));
             if (!slip.Earnings.IsDefault) foreach (var l in slip.Earnings) body.Children.Add(Text("Brutto: " + l.Label + "  " + Presentation.Currency(l.Amount.Cents), 12));
             if (!slip.Adjustments.IsDefault) foreach (var a in slip.Adjustments) body.Children.Add(Text($"Rückrechnung für {Presentation.Month(a.EarningsPeriod)} · {Presentation.Currency(a.NetEffect.Cents)} · Seite {a.Page}", 12));

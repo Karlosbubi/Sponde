@@ -31,9 +31,9 @@ public sealed class OverviewTests
                 var evidence = Path.Combine(root, "demo.pdf"); File.WriteAllText(evidence, "synthetic");
                 var rows = Enumerable.Range(4, 6).SelectMany(m => new[]
                 {
-                    new Transaction(Guid.NewGuid(), new(2026,m,5), "N26", "Synthetic employer", new(300000), MovementKind.Income, "Gehalt Netto", ReviewStatus.Assigned, "", "demo.pdf", 1, "", null, ""),
-                    new Transaction(Guid.NewGuid(), new(2026,m,6), "N26", "Synthetic landlord", new(-120000), MovementKind.Expense, "Miete", ReviewStatus.Assigned, "", "demo.pdf", 1, "", null, ""),
-                    new Transaction(Guid.NewGuid(), new(2026,m,7), "N26", "Synthetic shop", new(-25000), MovementKind.Expense, "Lebensmittel", ReviewStatus.Review, "", "demo.pdf", 1, "", null, "")
+                    new Transaction(Guid.NewGuid(), new(2000,m,5), "N26", "Synthetic employer", new(300000), MovementKind.Income, "Gehalt Netto", ReviewStatus.Assigned, "", "demo.pdf", 1, "", null, ""),
+                    new Transaction(Guid.NewGuid(), new(2000,m,6), "N26", "Synthetic landlord", new(-120000), MovementKind.Expense, "Miete", ReviewStatus.Assigned, "", "demo.pdf", 1, "", null, ""),
+                    new Transaction(Guid.NewGuid(), new(2000,m,7), "N26", "Synthetic shop", new(-25000), MovementKind.Expense, "Lebensmittel", ReviewStatus.Review, "", "demo.pdf", 1, "", null, "")
                 }).ToImmutableArray();
                 store.Commit(new("Demo", new(rows, [], [new("Miete", new(120000), "N26", false)], []), [new(evidence, Evidence.Hash(evidence))], [], "pdf-demo-v1"));
                 var window = new MainWindow(new FinanceService(store, new StatementReader()));

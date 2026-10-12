@@ -11,10 +11,11 @@ if (args[0] == "restore" && args.Length == 3)
 var folder = Path.GetFullPath(args[1]);
 if (args[0] == "inspect")
 {
+    var ordinal = 0;
     foreach (var path in Directory.EnumerateFiles(folder, "*.pdf", SearchOption.AllDirectories))
     {
         var preview = new StatementReader().Read(path);
-        Console.WriteLine($"{Path.GetFileName(path)}: rows={preview.Data.Transactions.Length}, slips={preview.Data.Payslips.Length}, issues={string.Join("; ", preview.Issues)}");
+        Console.WriteLine($"PDF #{++ordinal}: issues={preview.Issues.Length}");
         if (preview.Issues.Length > 0 && args.Length > 2)
         {
             Directory.CreateDirectory(args[2]);
@@ -33,7 +34,7 @@ var batch = service.PreviewStatements(paths.Reverse());
 foreach (var item in batch.Items)
 {
     var preview = item.Preview;
-    Console.WriteLine($"{preview.DisplayName}: issues={string.Join("; ", preview.Issues)}");
+    Console.WriteLine($"PDF validation: issues={preview.Issues.Length}");
     if (!preview.CanCommit) throw new InvalidOperationException("Private corpus validation failed.");
 }
 var result = service.CommitStatements(batch);
@@ -47,4 +48,4 @@ var backup = Path.Combine(args[2], "validated.spondebackup");
 service.Backup(backup);
 service.Restore(backup);
 if (JsonSerializer.Serialize(final) != JsonSerializer.Serialize(service.Read())) throw new InvalidOperationException("Restore changed data.");
-Console.WriteLine($"PASS: {final.Transactions.Length} PDF transactions, {final.Payslips.Length} payroll documents, no imported budgets, exact reconciliation, idempotent imports and backup restore.");
+Console.WriteLine("PASS: PDF-only import, exact reconciliation, idempotent imports and backup restore. Private counts and identifiers omitted.");

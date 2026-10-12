@@ -13,49 +13,49 @@ public sealed class ParserTests
             Beschreibung Verbuchungsdatum Betrag
             Merchant A
             Mastercard
-            Wertstellung 02.09.2026
-            03.09.2026 -5,00€
+            Wertstellung 02.09.2000
+            03.09.2000 -5,00€
             Merchant A
             Mastercard
-            Wertstellung 02.09.2026
-            03.09.2026 -5,00€
-            Kontoauszug Nr. 09/2026
-            01.09.2026 bis 30.09.2026
+            Wertstellung 02.09.2000
+            03.09.2000 -5,00€
+            Kontoauszug Nr. 09/2000
+            01.09.2000 bis 30.09.2000
             """), new(2, """
             Dein alter Kontostand +20,00€
             Dein neuer Kontostand +10,00€
-            01.09.2026 bis 30.09.2026
+            01.09.2000 bis 30.09.2000
             """), new(3, """
             Beschreibung Verbuchungsdatum Betrag
             Merchant B
             Mastercard
-            Wertstellung 04.09.2026
-            04.09.2026 -3,00€
-            Space Kontoauszug Nr. 09/2026
+            Wertstellung 04.09.2000
+            04.09.2000 -3,00€
+            Space Kontoauszug Nr. 09/2000
             Space: Test Space
-            01.09.2026 bis 30.09.2026
+            01.09.2000 bis 30.09.2000
             """), new(4, """
             Dein alter Kontostand +5,00€
             Dein neuer Kontostand +2,00€
             Space: Test Space
-            01.09.2026 bis 30.09.2026
+            01.09.2000 bis 30.09.2000
             """)]);
         Assert.True(preview.CanCommit, string.Join(";", preview.Issues)); Assert.Equal(3, preview.Data.Transactions.Length);
         Assert.Equal(3, preview.Data.Transactions.Select(t => t.Id).Distinct().Count());
-        Assert.Equal(2, preview.Data.Statements.Length); Assert.Equal(new DateOnly(2026, 9, 2), preview.Data.Transactions[0].ValueDate);
+        Assert.Equal(2, preview.Data.Statements.Length); Assert.Equal(new DateOnly(2000, 9, 2), preview.Data.Transactions[0].ValueDate);
     }
     [Fact]
     public void N26MismatchCannotCommit()
     {
-        var preview = N26Parser.Parse("x.pdf", "hash", [new(1, "Dein alter Kontostand +10,00€\nDein neuer Kontostand +9,00€\n01.09.2026 bis 30.09.2026")]);
+        var preview = N26Parser.Parse("x.pdf", "hash", [new(1, "Dein alter Kontostand +10,00€\nDein neuer Kontostand +9,00€\n01.09.2000 bis 30.09.2000")]);
         Assert.False(preview.CanCommit); Assert.NotEmpty(preview.Issues);
     }
     [Fact]
     public void VrSignsAbbreviatedDatesAndWrappedPurposeArePreserved()
     {
         var preview = VrParser.Parse("vr.pdf", "hash", [new(1, """
-            neuer Kontostand v. 30.09.2026 8,00 H
-            alter Kontostand vom 31.08.2026
+            neuer Kontostand v. 30.09.2000 8,00 H
+            alter Kontostand vom 31.08.2000
             VorgangWert
             10,00 H
             01.09. 31.08. Kartenzahlung PN:1 5,00 S
@@ -67,14 +67,18 @@ public sealed class ParserTests
             Übertrag auf Blatt 2 8,00 H
             """)]);
         Assert.True(preview.CanCommit, string.Join(";", preview.Issues)); Assert.Equal(-500, preview.Data.Transactions[0].Amount.Cents);
-        Assert.Contains("continued", preview.Data.Transactions[0].Purpose); Assert.Equal(new DateOnly(2026, 8, 31), preview.Data.Transactions[0].ValueDate);
+        Assert.Contains("continued", preview.Data.Transactions[0].Purpose); Assert.Equal(new DateOnly(2000, 8, 31), preview.Data.Transactions[0].ValueDate);
     }
-    [Fact]
-    public void PayrollExcludesIncludedComponentsAndYearToDateAmounts()
+    [Theory]
+    [InlineData("Synthetic deduction -20,00")]
+    [InlineData("Unrelated adjustment -15,00\nAnother invented adjustment -5,00")]
+    public void PayrollExcludesIncludedComponentsAndYearToDateAmounts(string adjustmentRows)
     {
-        var preview = PayrollParser.Parse("pay.pdf", "hash", [new(1, """
+        var preview = PayrollParser.Parse("pay.pdf", "hash", [new(1, $$"""
             Entgeltnachweis
-            für September 2026
+            für September 2000
+            Synthetic base LSG 800,00
+            Another invented earning 200,00
             Gesamtbrutto (EBeschV) 1.000,00 9.000,00
             Lohnsteuer 100,00 100,00 900,00
             Kirchensteuer 10,00 10,00 90,00
@@ -86,11 +90,21 @@ public sealed class ParserTests
             Beitragszuschl. PV (in PV-Abz.enth) 5,00
             Gesetzliches Netto (EBeschV) 700,00
             Summe Rückrechnung -10,00
-            Synthetic deduction -20,00
+            {{adjustmentRows}}
             Überweisung 670,00 EUR
             """)]);
         Assert.True(preview.CanCommit, string.Join(";", preview.Issues)); Assert.Equal(30000, preview.Data.Payslips.Single().Deductions.Cents);
+        Assert.Equal(2000, preview.Data.Payslips.Single().PostNetDeductions.Cents);
+        Assert.Equal(100000, preview.Data.Payslips.Single().Earnings.Sum(e => e.Amount.Cents));
         Assert.Empty(preview.Data.Transactions);
+    }
+    [Fact]
+    public void PostNetAdjustmentsPreserveExistingJsonStorageContract()
+    {
+        var slip = new Payslip("synthetic.pdf", new(2000, 1, 1), new(100000), new(30000), new(70000), new(0), new(2000), new(68000), [], [], []);
+        var json = System.Text.Json.JsonSerializer.Serialize(slip);
+        Assert.Contains("\"Canteen\"", json);
+        Assert.Equal(slip.PostNetDeductions, System.Text.Json.JsonSerializer.Deserialize<Payslip>(json)!.PostNetDeductions);
     }
     [Fact]
     public void UnknownPdfCannotInventTransactions()
