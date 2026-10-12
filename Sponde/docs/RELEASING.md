@@ -3,6 +3,8 @@
 Accepted 2026-10-12: ship a Windows 11 x64 MSI and an x86_64 RPM built and
 installed on the latest stable Fedora. Both include the .NET runtime. No
 financial documents, database or development dataset belong in either package.
+Packages preserve supplied dependency licenses and .NET runtime notices, and
+include an inventory of restored dependencies under the `licenses` directory.
 
 The repository-root `.github/workflows/build.yml` runs on pull requests targeting
 `main`, pushes to `main`, and manual dispatch. Tests and formatting must pass on

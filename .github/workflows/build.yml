@@ -58,6 +58,7 @@ jobs:
           dotnet-version: '10.0.400'
       - run: dotnet restore Sponde.slnx --locked-mode
       - run: dotnet publish Sponde/Sponde.csproj --no-restore -c Release -r win-x64 --self-contained true -p:Version=${{ needs.version.outputs.version }} -p:DebugType=None -p:DebugSymbols=false -o artifacts/publish/win-x64
+      - run: ./packaging/Collect-Licenses.ps1 -PayloadDirectory artifacts/publish/win-x64
       - name: Build current and previous-version installers
         env:
           PACKAGE_VERSION: ${{ needs.version.outputs.version }}
@@ -87,6 +88,9 @@ jobs:
           dotnet-version: '10.0.400'
       - run: dotnet restore Sponde.slnx --locked-mode
       - run: dotnet publish Sponde/Sponde.csproj --no-restore -c Release -r linux-x64 --self-contained true -p:Version=${{ needs.version.outputs.version }} -p:DebugType=None -p:DebugSymbols=false -o artifacts/publish/linux-x64
+      - name: Preserve dependency licenses and runtime notices
+        shell: pwsh
+        run: ./packaging/Collect-Licenses.ps1 -PayloadDirectory artifacts/publish/linux-x64
       - name: Build and test on latest stable Fedora
         env:
           PACKAGE_VERSION: ${{ needs.version.outputs.version }}

@@ -26,6 +26,8 @@ is not complete; this document distinguishes delivered code from verified use.
   monthly CSV export and cancellable imports.
 - Snapshot/checksum backups, validated restore and pre-restore recovery backup.
 - Pinned dependencies/lock files, formatter/analyzers and Windows/Linux CI setup.
+- MSI and latest-stable Fedora RPM release workflow, package lifecycle checks,
+  dependency notices, desktop shortcuts/icons and checksums; see RELEASING.md.
 - Self-contained Windows x64 and Linux x64 build folders under ignored
   `.local/publish`; PDF-only working dataset under ignored `.local/pdf-data`.
   The old prototype dataset remains separately in `.local/data` and is not opened
