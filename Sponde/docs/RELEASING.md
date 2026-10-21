@@ -21,6 +21,9 @@ the exact tested commit. Publication starts as a draft and finishes after both
 assets upload. Re-running a run retains its version.
 Published release assets remain unchanged on re-runs; interrupted draft releases
 can resume with replacement uploads.
+Draft publication resolves the release's REST URL through `gh release view` and
+updates it by ID. The REST tag lookup can return 404 for an unpublished draft,
+even after asset uploads succeed.
 Only the publication job receives write access; action references are pinned.
 
 ## Versions
