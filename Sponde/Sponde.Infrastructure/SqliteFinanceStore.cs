@@ -163,7 +163,7 @@ public sealed class SqliteFinanceStore : IFinanceStore, IDisposable
                 postings.Add(new("Asset:" + payment.Account, p.Payout.Cents));
                 postings.Add(new("Income:Gross salary", -p.Gross.Cents));
                 foreach (var line in p.Lines) postings.Add(new("Expense:Payroll:" + line.Label, line.Amount.Cents));
-                if (p.Canteen.Cents != 0) postings.Add(new("Expense:Payroll:Canteen", p.Canteen.Cents));
+                if (p.PostNetDeductions.Cents != 0) postings.Add(new("Expense:Payroll:Post-net deductions", p.PostNetDeductions.Cents));
                 if (p.Correction.Cents != 0) postings.Add(new("Clearing:Payroll corrections", -p.Correction.Cents));
                 new JournalEntry(payment.Id, payment.Date, postings.ToImmutable()).Validate();
                 Execute(db, "DELETE FROM postings WHERE entry_id=$id", tx, ("$id", payment.Id.ToString()));

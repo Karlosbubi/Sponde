@@ -22,14 +22,14 @@ public sealed class PdfPipelineTests
         var preview = StatementReader.Parse("arbitrary-name.pdf", "hash", [new(1, """
             Beschreibung Verbuchungsdatum Betrag
             Example merchant
-            Wertstellung 02.09.2026
-            03.09.2026 -5,00€
-            Kontoauszug Nr. 09/2026
-            01.09.2026 bis 30.09.2026
+            Wertstellung 02.09.2000
+            03.09.2000 -5,00€
+            Kontoauszug Nr. 09/2000
+            01.09.2000 bis 30.09.2000
             """), new(2, """
             Dein alter Kontostand +10,00€
             Dein neuer Kontostand +5,00€
-            01.09.2026 bis 30.09.2026
+            01.09.2000 bis 30.09.2000
             """)]);
         Assert.True(preview.CanCommit, string.Join(";", preview.Issues));
         Assert.Equal("pdf-n26-v2", preview.ParserVersion);
@@ -64,7 +64,7 @@ public sealed class PdfPipelineTests
     [Fact]
     public void OwnTransfersUseAccountIdentifiersAndPreserveManualDecisions()
     {
-        var row = new Transaction(Guid.NewGuid(), new(2026, 9, 1), "Primary", "Example recipient", new(-500), MovementKind.Expense,
+        var row = new Transaction(Guid.NewGuid(), new(2000, 9, 1), "Primary", "Example recipient", new(-500), MovementKind.Expense,
             "Nicht zugeordnet", ReviewStatus.Review, "", "source.pdf", 1, "IBAN: XX00 1234 5678", null, "");
         BankAccount[] accounts = [new("Secondary", "XX0012345678")];
         Assert.Equal(MovementKind.Transfer, OwnTransfers.Apply(row, accounts).Kind);
@@ -79,9 +79,9 @@ public sealed class PdfPipelineTests
         public bool Recognizes(string text) => text.Contains("Custom statement", StringComparison.Ordinal);
         public ImportPreview Parse(string path, string hash, ImmutableArray<PdfPageText> pages)
         {
-            var row = new Transaction(Evidence.Id(hash), new(2026, 9, 1), "Custom account", "Example", new(-500), MovementKind.Expense,
+            var row = new Transaction(Evidence.Id(hash), new(2000, 9, 1), "Custom account", "Example", new(-500), MovementKind.Expense,
                 "Nicht zugeordnet", ReviewStatus.Review, "", Path.GetFileName(path), 1, "", null, "");
-            var balance = new StatementBalance(row.Source, row.Account, new(2026, 9, 1), new(1000), new(unbalanced ? 499 : 500), 1);
+            var balance = new StatementBalance(row.Source, row.Account, new(2000, 9, 1), new(1000), new(unbalanced ? 499 : 500), 1);
             return new(row.Source, new([row], [balance], [], []), [new(path, hash)], [], "pdf-custom-v1");
         }
     }
