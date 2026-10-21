@@ -153,5 +153,7 @@ jobs:
             gh release create "$tag" --verify-tag --draft --title "Sponde $RELEASE_VERSION" --notes-file RELEASE_NOTES.md
           fi
           gh release upload "$tag" ./*.msi ./*.rpm SHA256SUMS --clobber
-          release_id=$(gh api "repos/$GH_REPO/releases/tags/$tag" --jq .id)
-          gh api --method PATCH "repos/$GH_REPO/releases/$release_id" -F draft=false -f make_latest=legacy
+          # Draft releases may not resolve through the REST tag endpoint.
+          # gh release view resolves drafts and exposes their numeric REST URL.
+          release_api_url=$(gh release view "$tag" --json apiUrl --jq .apiUrl)
+          gh api --method PATCH "$release_api_url" -F draft=false -f make_latest=legacy
